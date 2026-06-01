@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Reporter } from './reporters.entity';
 import { AssignReporterDto } from './reporters.dto';
@@ -16,22 +16,64 @@ export class ReportersService {
     data: Reporter | null;
     message: string;
   }> {
-    // const res = await this.reporterRepository.findOne({
-    //   where: {
-    //     id: assignReporterDto.id,
-    //   },
-    // });
+    try {
+      const reporterQuery = await this.reporterRepository.findOne({
+        where: {
+          id: assignReporterDto.id,
+        },
+      });
+      if (reporterQuery) {
+        const assignedJob = await this.jobsService.assignJob({
+          id: assignReporterDto.job_id,
+          reporter: reporterQuery,
+        });
 
-    const assignJob = await this.reporterRepository.update(
-      assignReporterDto.id,
-      {
-        jobs: [assignReporterDto.job],
-      },
-    );
-    console.log(assignJob, 'ASSIGNED');
-    return {
-      data: null,
-      message: 'Successfully Created',
-    };
+        const assignReporter = await this.reporterRepository.update(
+          assignReporterDto.id,
+          {
+            jobs: [...reporterQuery.jobs, assignedJob.job],
+          },
+          { returning: ['id'] },
+        );
+
+        const updatedReporter = await this.reporterRepository.findOne({
+          where: {
+            id: assignReporter.raw?.[0].id,
+          },
+        });
+
+        if (updatedReporter) {
+          return {
+            data: updatedReporter,
+            message: 'Successfully Created',
+          };
+        }
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'Reporter not found',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Reporter not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Error 500',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: error,
+        },
+      );
+    }
   }
 }

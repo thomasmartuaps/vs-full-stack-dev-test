@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { AssignJobDto, CreateJobDto, UpdateStatusDto } from './jobs.dto';
 import { Repository } from 'typeorm';
 import { Job } from './jobs.entity';
@@ -27,18 +27,44 @@ export class JobsService {
     };
   }
 
-  async assignJob(assignJob: AssignJobDto): Promise<{ message: string }> {
-    const res = await this.jobRepository.update(
-      assignJob.id,
-      {
-        reporter: assignJob.reporter,
-      },
-      { returning: ['id', 'case_name', 'reporter'] },
-    );
-    console.log(res);
-    return {
-      message: 'Assigned Job',
-    };
+  async assignJob(
+    assignJob: AssignJobDto,
+  ): Promise<{ job: Job; message: string }> {
+    try {
+      const res = await this.jobRepository.update(
+        assignJob.id,
+        {
+          reporter: assignJob.reporter,
+        },
+        { returning: ['id', 'case_name', 'reporter'] },
+      );
+      console.log(res);
+      const assignedJob = await this.jobRepository.findOne(res.raw?.[0]?.id);
+      if (assignedJob) {
+        return {
+          job: assignedJob,
+          message: 'Assigned Job',
+        };
+      }
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'Job not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Error 500',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: error,
+        },
+      );
+    }
   }
 
   async updateStatus(updateStatusDto: UpdateStatusDto): Promise<{
