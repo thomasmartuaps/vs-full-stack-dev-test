@@ -1,5 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToOne,
+} from 'typeorm';
 import { Reporter } from '../reporters/reporters.entity';
+import { Editor } from '../editors/editors.entity';
+import { Payment } from '../payments/payments.entity';
 
 @Entity()
 export class Job {
@@ -20,4 +28,10 @@ export class Job {
 
   @ManyToOne(() => Reporter, (reporter) => reporter.jobs)
   reporter!: Reporter;
+
+  @ManyToOne(() => Editor, (editor) => editor.jobs)
+  editor!: Editor;
+
+  @OneToOne(() => Payment, (payment) => payment.job)
+  payment!: Payment;
 }

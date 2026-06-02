@@ -34,6 +34,7 @@ export class JobsService {
       const res = await this.jobRepository.update(
         assignJob.id,
         {
+          status: 'ASSIGNED',
           reporter: assignJob.reporter,
         },
         { returning: ['id', 'case_name', 'reporter'] },
@@ -67,6 +68,7 @@ export class JobsService {
     }
   }
 
+  // remove this after all other services are done
   async updateStatus(updateStatusDto: UpdateStatusDto): Promise<{
     data: {
       id: string;

@@ -48,13 +48,6 @@ export class ReportersService {
             message: 'Successfully Created',
           };
         }
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            error: 'Reporter not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
       }
       throw new HttpException(
         {

@@ -14,6 +14,7 @@ export class JobsController {
     });
   }
 
+  // Should be removed once other endpoints that update job status are done
   @Put('update-status')
   async updateStatus(@Body() data: UpdateStatusDto) {
     return await this.jobsService.updateStatus(data);
